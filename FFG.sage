@@ -1287,15 +1287,24 @@ def test_STS_27(DIR, t, c, num_representatives, index):
     print("END in {}".format(seconds_to_age(end_time)))
 
 
-def test_STS_31(DIR, t, num_representatives, index):
+def test_STS_31(DIR, t, c, num_representatives, index):
     start_time = time.perf_counter()
-    R = NQMappings(DIR, t, 0, num_representatives, index=index, Q_type="STS31", reset_files=True, enable_print=True)
-    Q_STS_31_sum = lambda A, B, index=index: sum_STS_31(index, A, B)
-    R.set_sumNQ(sum_N, Q_STS_31_sum)
-    
-    alpha_aut = lambda t=t, alphas_automorphism=alphas_automorphism: alphas_automorphism(t)
-    beta_aut = lambda R=R, betas_automorphism=betas_STS_31_automorphism, index=index: betas_automorphism(index, R.Q)
-    curr_beta_map = lambda beta, A, beta_map=beta_STS_31_map: beta_map(beta, A)
+
+    if index == 1:
+        R = NQMappings(DIR, t, c, num_representatives, index=index, Q_type="UPDATE", reset_files=True, enable_print=True)
+        R.set_sumNQ(sum_N, sum_Q)
+        
+        alpha_aut = lambda t=t, alphas_automorphism=alphas_automorphism: alphas_automorphism(t)
+        beta_aut = lambda c=c, betas_automorphism=betas_automorphism: betas_automorphism(c)
+        curr_beta_map = lambda beta, A, c=c, beta_map=beta_map: beta_map(beta, A, c)
+    else:
+        R = NQMappings(DIR, t, 0, num_representatives, index=index, Q_type="STS31", reset_files=True, enable_print=True)
+        Q_STS_31_sum = lambda A, B, index=index: sum_STS_31(index, A, B)
+        R.set_sumNQ(sum_N, Q_STS_31_sum)
+        
+        alpha_aut = lambda t=t, alphas_automorphism=alphas_automorphism: alphas_automorphism(t)
+        beta_aut = lambda R=R, betas_automorphism=betas_STS_31_automorphism, index=index: betas_automorphism(index, R.Q)
+        curr_beta_map = lambda beta, A, beta_map=beta_STS_31_map: beta_map(beta, A)
     
     R.set_automorphisms(alpha_aut, beta_aut)
     R.set_beta_map(curr_beta_map)
@@ -1328,65 +1337,33 @@ def test_STS_31(DIR, t, num_representatives, index):
     print("END in {}".format(seconds_to_age(end_time)))
 
 
-def STS_31_UPDATE(DIR, t, c, filename, index):
-    start_time = time.perf_counter()
-    if index == 1:
-        R = NQMappings(DIR, t, c, 0, index=index, Q_type="UPDATE", reset_files=False, enable_print=False)
-        R.set_sumNQ(sum_N, sum_Q)
-        
-        alpha_aut = lambda t=t, alphas_automorphism=alphas_automorphism: alphas_automorphism(t)
-        beta_aut = lambda c=c, betas_automorphism=betas_automorphism: betas_automorphism(c)
-        curr_beta_map = lambda beta, A, c=c, beta_map=beta_map: beta_map(beta, A, c)
-    elif index == 2:
-        R = NQMappings(DIR, t, c, 0, index=index, Q_type="STS31", reset_files=False, enable_print=False)
-        Q_STS_31_sum = lambda A, B, index=index: sum_STS_31(index, A, B)
-        R.set_sumNQ(sum_N, Q_STS_31_sum)
-        
-        alpha_aut = lambda t=t, alphas_automorphism=alphas_automorphism: alphas_automorphism(t)
-        beta_aut = lambda R=R, betas_automorphism=betas_STS_31_automorphism, index=index: betas_automorphism(index, R.Q)
-        curr_beta_map = lambda beta, A, beta_map=beta_STS_31_map: beta_map(beta, A)
-        
-    R.set_automorphisms(alpha_aut, beta_aut)
-    R.set_beta_map(curr_beta_map)
-    
-    R.class_reduction(filename, index)
-    
-    end_time = time.perf_counter() - start_time
-    print("END in {}".format(seconds_to_age(end_time)))
-
-
 if __name__ == "__main__":
     try:
-        STS_31_UPDATE(".", int(1), int(4), "beta_classes", int(1))
-        STS_31_UPDATE(".", int(1), int(4), "beta_classes", int(2))
+        Q_types = ["STS19", "STS27", "STS31", "ALL"]
+        DIR = str(input("Main directory -> ")) or "D:\GiuseppeFilippone\FFG"
+        while True:
+            Q_type = str(input("Insert Q type ({}) -> ".format(", ".join(Q_types)))).upper()
+            if Q_type in Q_types:
+                break
+        if Q_type != "STS19":
+            indices = str(input("Indices -> ")).strip()
+            indices = [None] if indices == "" else list(map(int, indices.split(" ")))
+        if Q_type != "STS31" or (Q_type == "STS31" and 1 in indices):
+            t, c = [int(e) for e in str(input("Insert t c -> ")).split(" ")]
+        else:
+            t, c = int(str(input("Insert t -> "))), 0
+        num_representatives = eval(str(input("Expected number of cosets -> ")))
+        for index in indices:
+            if Q_type == "ALL" or (Q_type == "STS31" and index == 1):
+                test(DIR, t, c, num_representatives, index)
+            elif Q_type == "STS19":
+                test_STS_19(DIR, t, c, num_representatives)
+            elif Q_type == "STS27":
+                test_STS_27(DIR, t, c, num_representatives, index)
+            elif Q_type == "STS31":
+                test_STS_31(DIR, t, c, num_representatives, index)
     except KeyboardInterrupt as e:
         print("\n\nProcess interrupted")
-    # try:
-        # Q_types = ["STS19", "STS27", "STS31", "ALL"]
-        # DIR = str(input("Main directory -> ")) or "D:\GiuseppeFilippone\FFG"
-        # while True:
-            # Q_type = str(input("Insert Q type ({}) -> ".format(", ".join(Q_types)))).upper()
-            # if Q_type in Q_types:
-                # break
-        # if Q_type != "STS19":
-            # indices = str(input("Indices -> ")).strip()
-            # indices = [None] if indices == "" else list(map(int, indices.split(" ")))
-        # if Q_type != "STS31" or (Q_type == "STS31" and 1 in indices):
-            # t, c = [int(e) for e in str(input("Insert t c -> ")).split(" ")]
-        # else:
-            # t = int(str(input("Insert t -> ")))
-        # num_representatives = eval(str(input("Expected number of cosets -> ")))
-        # for index in indices:
-            # if Q_type == "ALL" or (Q_type == "STS31" and index == 1):
-                # test(DIR, t, c, num_representatives, index)
-            # elif Q_type == "STS19":
-                # test_STS_19(DIR, t, c, num_representatives)
-            # elif Q_type == "STS27":
-                # test_STS_27(DIR, t, c, num_representatives, index)
-            # elif Q_type == "STS31":
-                # test_STS_31(DIR, t, num_representatives, index)
-    # except KeyboardInterrupt as e:
-        # print("\n\nProcess interrupted")
-    # except Exception as e:
-        # print()
-        # print(e)
+    except Exception as e:
+        print()
+        print(e)
